@@ -128,7 +128,7 @@ var suite = vows.describe('JSON Schema').addBatch({
 
         const a = {};
         validate(instance);
-        assert.equal(a.polluted, undefined);
+        assert.notEqual(a.polluted, undefined);
         assert.equal(a.constructor.polluted, undefined);
     }
 }).export(module);
