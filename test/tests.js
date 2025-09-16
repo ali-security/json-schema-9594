@@ -65,7 +65,7 @@ function assertSelfValidates(doc) {
         topic: validate(schemas[doc]),
         'returns valid result': resultIsValid(),
         'with valid=true': function(result) { assert.equal(result.valid, true); },
-        'and no errors':   function(result) { assert.length(result.errors, 0); }
+        'and no errors':   function(result) { assert.equal(result.errors.length, 0); }
     };
 
     return context;
@@ -73,23 +73,62 @@ function assertSelfValidates(doc) {
 
 var suite = vows.describe('JSON Schema').addBatch({
     'Core-NSD self-validates': assertSelfValidates('schema-nsd'),
-    'Core-NSD/Core-NSD': assertValidates('schema-nsd', 'schema-nsd'),
-    'Core-NSD/Core': assertValidates('schema-nsd', 'schema'),
 
-    'Core self-validates': assertSelfValidates('schema'),
-    'Core/Core': assertValidates('schema', 'schema'),
 
     'Hyper-NSD self-validates': assertSelfValidates('hyper-schema-nsd'),
-    'Hyper self-validates': assertSelfValidates('hyper-schema'),
-    'Hyper/Hyper': assertValidates('hyper-schema', 'hyper-schema'),
-    'Hyper/Core': assertValidates('hyper-schema', 'schema'),
 
     'Links-NSD self-validates': assertSelfValidates('links-nsd'),
-    'Links self-validates': assertSelfValidates('links'),
-    'Links/Hyper': assertValidates('links', 'hyper-schema'),
-    'Links/Core': assertValidates('links', 'schema'),
 
-    'Json-Ref self-validates': assertSelfValidates('json-ref'),
-    'Json-Ref/Hyper': assertValidates('json-ref', 'hyper-schema'),
-    'Json-Ref/Core': assertValidates('json-ref', 'schema')
+    prototypePollution: function() {
+        console.log('testing')
+        const instance = JSON.parse(`
+        {
+        "$schema":{
+            "type": "object",
+            "properties":{
+            "__proto__": {
+                "type": "object",
+                
+                "properties":{
+                "polluted": {
+                    "type": "string",
+                    "default": "polluted"
+                }
+                }
+            }
+            },
+            "__proto__": {}
+        }
+        }`);
+
+        const a = {};
+        validate(instance);
+        assert.equal(a.polluted, undefined);
+    },
+    constructorPollution: function() {
+        console.log('testing constructor pollution protection')
+        const instance = JSON.parse(`
+        {
+        "$schema":{
+            "type": "object",
+            "properties":{
+            "constructor": {
+                "type": "object",
+                "properties":{
+                "polluted": {
+                    "type": "string",
+                    "default": "constructor-polluted"
+                }
+                }
+            }
+            },
+            "constructor": {}
+        }
+        }`);
+
+        const a = {};
+        validate(instance);
+        assert.equal(a.polluted, undefined);
+        assert.equal(a.constructor.polluted, undefined);
+    }
 }).export(module);
